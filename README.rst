@@ -1,85 +1,70 @@
-TAP-Windows driver (NDIS 6)
+TAP-Windows驱动程序（NDIS 6）
 ===========================
 
-This is an NDIS 6.20/6.30 implementation of the TAP-Windows driver, used by
-OpenVPN and other apps. NDIS 6.20 drivers can run on Windows 7 or higher except
-on ARM64 desktop systems where, since the platform relies on next-gen power
-management in its drivers, NDIS 6.30 is required.
+这是TAP-Windows驱动程序的NDIS 6.20/6.30实现，被OpenVPN和其他应用程序使用。NDIS 6.20驱动程序可以在Windows 7或更高版本上运行，但在ARM64台式系统上，由于该平台依赖其驱动程序中的下一代电源管理，需要使用NDIS 6.30。
 
-Build
+构建
 -----
 
-The prerequisites for building are:
+构建所需的先决条件包括：
 
 - Python 2.7
-- Microsoft Windows 10 EWDK (Enterprise Windows Driver Kit)
-    - Visual Studio+Windows Driver Kit works too. Make sure to work from a "Command Prompt for Visual Studio" and to call buildtap.py with "--sdk=wdk".
-- The devcon source code directory (setup/devcon) from `Windows-driver-samples <https://github.com/OpenVPN/Windows-driver-samples>`_ (optional)
-    - If you use the repo from `upstream <https://github.com/Microsoft/Windows-driver-samples>`_ remember to include our patch to devcon.vcxproj to ensure that devcon.exe is statically linked.
-- Windows code signing certificate
-- Git (not strictly required, but useful for running commands using bundled bash shell)
-- MakeNSIS (optional)
-- Prebuilt tapinstall.exe binaries (optional)
-- Visual Studio 2019 and WiX Toolset for MSM packaging (optional)
+- Microsoft Windows 10 EWDK（企业Windows驱动程序工具包）
+    - Visual Studio+Windows驱动程序工具包也可以。确保从“Visual Studio命令提示符”中工作，并使用“--sdk=wdk”调用buildtap.py。
+- 来自`Windows-driver-samples <https://github.com/OpenVPN/Windows-driver-samples>`_（可选）的devcon源代码目录（setup/devcon）
+    - 如果使用`upstream <https://github.com/Microsoft/Windows-driver-samples>`_的repo，请记得包含我们对devcon.vcxproj的补丁，以确保devcon.exe是静态链接的。
+- Windows代码签名证书
+- Git（不是强制要求，但在使用捆绑的bash shell运行命令时很有用）
+- MakeNSIS（可选）
+- 预构建的tapinstall.exe二进制文件（可选）
+- Visual Studio 2019和WiX Toolset用于MSM打包（可选）
 
-Make sure you add Python's install directory (usually c:\\python27) to the PATH
-environment variable.
+确保将Python的安装目录（通常为c:\\python27）添加到PATH环境变量中。
 
-Tap-windows6 has been successfully build on Windows 10 and Windows Server 2016 using
-CMD.exe, Powershell and Git Bash.
+在Windows 10和Windows Server 2016上，使用CMD.exe、Powershell和Git Bash成功构建了tap-windows6。
 
-View build script options::
+查看构建脚本选项：
 
   $ python buildtap.py
   Usage: buildtap.py [options]
 
   Options:
-    -h, --help           show this help message and exit
-    -s SRC, --src=SRC    TAP-Windows top-level directory, default=<CWD>
-    --ti=TAPINSTALL      tapinstall (i.e. devcon) directory (optional)
-    -d, --debug          enable debug build
-    --hlk                build for HLK tests (test sign, no debug)
-    -c, --clean          do an nmake clean before build
-    -b, --build          build TAP-Windows and possibly tapinstall (add -c to
-                         clean before build)
-    --sdk=SDK            SDK to use for building: ewdk or wdk, default=ewdk
-    --sign               sign the driver files
-    -p, --package        generate an NSIS installer from the compiled files
-    -m, --package-msm    generate a MSM installer from the compiled files
-    --cert=CERT          Common name of code signing certificate,
-                         default=openvpn
-    --certfile=CERTFILE  Path to the code signing certificate
-    --certpw=CERTPW      Password for the code signing certificate/key
-                         (optional)
-    --crosscert=CERT     The cross-certificate file to use, default=MSCV-
-                         VSClass3.cer
-    --timestamp=URL      Timestamp URL to use, default=http://timestamp.verisign
-                         .com/scripts/timstamp.dll
+    -h, --help           显示此帮助信息并退出
+    -s SRC, --src=SRC    TAP-Windows顶级目录，默认=<CWD>
+    --ti=TAPINSTALL      tapinstall（即devcon）目录（可选）
+    -d, --debug          启用调试构建
+    --hlk                为HLK测试构建（测试签名，无调试）
+    -c, --clean          在构建之前进行nmake clean
+    -b, --build          构建TAP-Windows和可能的tapinstall（在构建之前添加-c进行清理）
+    --sdk=SDK            用于构建的SDK：ewdk或wdk，默认=ewdk
+    --sign               对驱动程序文件进行签名
+    -p, --package        从编译文件生成NSIS安装程序
+    -m, --package-msm    从编译文件生成MSM安装程序
+    --cert=CERT          代码签名证书的通用名称，默认为openvpn
+    --certfile=CERTFILE  代码签名证书的路径
+    --certpw=CERTPW      代码签名证书/密钥的密码（可选）
+    --crosscert=CERT     要使用的交叉证书文件，默认为MSCV-VSClass3.cer
+    --timestamp=URL      要使用的时间戳URL，默认为http://timestamp.verisign.com/scripts/timstamp.dll
     --versionoverride=FILE
-                         Path to the version override file
+                         版本覆盖文件的路径
 
-Edit **version.m4** and **paths.py** as necessary then build::
+根据需要编辑**version.m4**和**paths.py**，然后构建：
 
   $ python buildtap.py -b
 
-On successful completion, all build products will be placed in the "dist"
-directory as well as tap6.tar.gz. The NSIS installer package will be placed to
-the build root directory.
+成功完成后，所有构建产品将放置在“dist”目录中，以及tap6.tar.gz。NSIS安装程序包将放置在构建根目录中。
 
-Building tapinstall (optional)
+构建tapinstall（可选）
 ------------------------------
 
-The easiest way to build tapinstall is to clone the Microsoft driver samples
-and copy the source for devcon.exe into the tap-windows6 tree. Using PowerShell::
+构建tapinstall最简单的方法是克隆Microsoft驱动程序示例并将devcon.exe的源代码复制到tap-windows6树中。使用PowerShell：
 
   $ git clone https://github.com/OpenVPN/Windows-driver-samples.git
   $ Copy-Item -Recurse Windows-driver-samples/setup/devcon tap-windows6
   $ cd tap-windows6
   $ python.exe buildtap.py -b --ti=devcon
 
-The build system also supports reuse of pre-built tapinstall.exe executables.
-To make sure the buildsystem finds the executables, create the following
-directory structure under tap-windows6 directory::
+构建系统还支持重用预构建的tapinstall.exe可执行文件。为确保构建系统找到这些可执行文件，请在tap-windows6目录下创建以下目录结构：
 
   devcon
   ├── Release
@@ -91,212 +76,180 @@ directory structure under tap-windows6 directory::
       └── Release
           └── devcon.exe
 
-This structure is equal to what building tapinstall would create. Then call
-buildtap.py with "--ti=devcon". Replace "Release" with your build configuration;
-for example, when using --Hlk you'd use "Hlk".
+此结构与构建tapinstall将创建的结构相同。然后使用“--ti=devcon”调用buildtap.py。将“Release”替换为您的构建配置；例如，使用--Hlk时使用“Hlk”。
 
-Please note that the NSIS packaging (-p) step will fail if you don't have
-tapinstall.exe available. Also don't use the "-c" flag or the above directories
-will get wiped before MakeNSIS is able to find them.
+请注意，如果您没有可用的tapinstall.exe，则NSIS打包（-p）步骤将失败。此外，不要使用“-c”标志，否则上述目录将在MakeNSIS能够找到它们之前被清除。
 
-Developer Mode: Installing,  Removing and Replacing the Driver
+开发者模式：安装、卸载和替换驱动程序
 -------------------------------------------------
 
-The driver can be installed using a command-line tool, tapinstall.exe, which is
-bundled with OpenVPN and tap-windows installers. Note that in some versions of
-OpenVPN tapinstall.exe is called devcon.exe. To install, update or remove the
-tap-windows NDIS 6 driver follow these steps:
+可以使用命令行工具tapinstall.exe来安装TAP-Windows NDIS 6驱动程序，该工具已与OpenVPN和tap-windows安装程序捆绑在一起。请按照以下步骤安装、更新或删除tap-windows NDIS 6驱动程序：
 
-- place tapinstall.exe/devcon.exe to your PATH
-- open an Administrator shell
-- cd to **dist**
-- cd to **amd64**, **i386**, or **arm64** depending on your system's processor architecture.
+- 将tapinstall.exe/devcon.exe放置到您的PATH中
+- 打开管理员shell
+- 切换到**dist**目录
+- 切换到根据您的系统处理器架构的**amd64**、**i386**或**arm64**目录。
 
+如果您正在积极开发驱动程序（例如：编辑、编译、调试、循环...），您可能不会每次都对驱动程序进行签名，因此您需要了解以下附加事项。
 
-If you are actively developing the driver (e.g.: Edit, Compile, Debug, Loop...), you may not be signing your driver each time, thus you need to be aware of the following additional items.
+禁用安全启动：
 
-Disable Secure Boot::
+未签名的驱动程序需要禁用安全启动。
 
-Unsigned drivers require disabling secure boot.
-
-- Secure Boot: Varies depending on PC Maker and/or the BIOS setting on your test machine.
+- 安全启动：根据PC制造商和/或测试机器上的BIOS设置而有所不同。
 - https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/disabling-secure-boot
-- VMWare (one example): https://docs.vmware.com/en/VMware-vSphere/7.0/com.vmware.vsphere.vm_admin.doc/GUID-898217D4-689D-4EB5-866C-888353FE241C.html
-- Virtual Box: SecureBoot is not supported on Virtual Box
-- Parallels (MacOS) https://kb.parallels.com/en/124242 [With Parallels 15, it is enabled by default, use 0 to disable]
+- VMWare（一个示例）：https://docs.vmware.com/en/VMware-vSphere/7.0/com.vmware.vsphere.vm_admin.doc/GUID-898217D4-689D-4EB5-866C-888353FE241C.html
+- Virtual Box：Virtual Box不支持SecureBoot
+- Parallels（MacOS）https://kb.parallels.com/en/124242 [使用Parallels 15，默认启用，使用0禁用]
 
-Enable Windows Test Mode::
+启用Windows测试模式：
 
-Test mode is also required.
+还需要启用测试模式。
 
-- Enable Windows Test Mode via BCEDIT
-- For details: https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/bcdedit-command-line-options
-- Specifically, ``bcdedit /set testsigning off`` or ``bcdedit /set testsigning on``
-- The result should be ``Test Mode`` in the bottom right corner of the windows screen.
+- 通过BCEDIT启用Windows测试模式
+- 详细信息：https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/bcdedit-command-line-options
+- 具体来说，``bcdedit /set testsigning off``或``bcdedit /set testsigning on``
+- 结果应该是窗口屏幕右下角显示``Test Mode``。
 
-Driver Installation::
+驱动程序安装：
 
-Notes
+注意事项
 
-- The command ``tapinstall install OemVista.inf TAP0901`` installs the driver
-- Because your driver is not signed, the ``tapinstall install`` step will pop up the "Big Scary Unsigned Driver Warning", you'll need to click OK.
-- As a result, the driver will be copied into the Windows Driver Store
+- 命令``tapinstall install OemVista.inf TAP0901``安装驱动程序
+- 由于您的驱动程序未签名，“tapinstall install”步骤将弹出“大胆的未签名驱动程序警告”，您需要点击“确定”。
+- 结果，驱动程序将被复制到Windows驱动程序存储中。
 
-Updating the Driver, and the Windows Driver Store::
+更新驱动程序和Windows驱动程序存储：
 
-At some point, you will build a shinny new driver and need to test it.
+在某个时候，您将构建一个全新的驱动程序并需要进行测试。
 
-- The command ``tapinstall remove TAP0901`` - removes the driver
-- However, the previously approved driver is still in the Windows Driver Store
-- Typing ``tapinstall install ...`` now, only re-installs the old driver that was copied into the driver store.
+- 命令``tapinstall remove TAP0901`` - 删除驱动程序
+- 但是，先前批准的驱动程序仍然在Windows驱动程序存储中
+- 现在键入``tapinstall install ...``，只会重新安装复制到驱动程序存储中的旧驱动程序。
 
-Key step: The driver needs to be removed from the driver store also.
+关键步骤：还需要从驱动程序存储中删除驱动程序。
 
-- Details: https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc730875(v=ws.11)
+- 详细信息：https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/cc730875(v=ws.11)
 
-There is a script to do this, but it only works if you have not changed the text strings in your driver package
+有一个脚本可以做到这一点，但只有在您的驱动程序包中的文本字符串未更改时才有效。
 
-- Script Location: https://github.com/mattock/tap-windows-scripts
+- 脚本位置：https://github.com/mattock/tap-windows-scripts
 
-The manual steps are:
+手动步骤如下：
 
-- Step 1 - Obtain a list of Installed drivers via the command: ``pnputil -e``, this will list all of the ``oemNUMBER.inf`` files that are in the driver store.
-- Step 2 - Find your driver in that list, it will be some ``oem<NUMBER>.inf`` file
-- Step 3 - To delete, use ``pnputil.exe /d oemNUMBER.inf``
+- 步骤1 - 通过命令``pnputil -e``获取已安装驱动程序的列表，这将列出驱动程序存储中的所有``oemNUMBER.inf``文件。
+- 步骤2 - 在该列表中找到您的驱动程序，它将是某个``oem<NUMBER>.inf``文件
+- 步骤3 - 要删除，请使用``pnputil.exe /d oemNUMBER.inf``
 
-Finally use ``tapinstall install OemVista.inf TAP0901`` to install your driver
+最后使用``tapinstall install OemVista.inf TAP0901``安装您的驱动程序
 
-Important::
+重要提示：
 
-If you do not see the Big Scary Unsigned Driver Warning - Windows will use the old (not new) driver.
+如果您没有看到“大胆的未签名驱动程序警告”，Windows将使用旧（而不是新）驱动程序。
 
-Troubleshooting:
+故障排除：
 
-Examining the SetupAPI log file helps, see ``C:\Windows\INF\setupapi.dev.log``.
+检查SetupAPI日志文件有助于排查问题，查看``C:\Windows\INF\setupapi.dev.log``。
 
-Build for HLK tests
+为HLK测试构建
 -------------------
 
-A test-signed version of tap-windows6 driver should be used for the HLK tests.
-The recommended procedure is to use pre-built, cross-signed devcon.exe and use
-the WDK-generated key for signing the driver.
+HLK测试应使用测试签名版本的tap-windows6驱动程序。建议的步骤是使用预构建的交叉签名的devcon.exe，并使用WDK生成的密钥对驱动程序进行签名。
 
-First setup the directory with prebuilt devcon as described above.
-Then run the build with the --hlk option::
+首先按照上述说明设置带有预构建的devcon的目录。然后使用--hlk选项运行构建：
 
   $ python.exe buildtap.py -c -b --ti=devcon-prebuilt --hlk
 
-Release process and signing
+发布过程和签名
 ---------------------------
 
-Microsoft's driver signing requirements have tightened considerably over the
-last several years. Because of this this buildsystem no longer attempts to sign
-files by default. If you want to sign the files at build time use the --sign
-option. The "sign" directory contains several Powershell scripts that help
-produce release-signed tap-windows6 packages:
+在过去几年中，Microsoft的驱动程序签名要求已经大大收紧。因此，默认情况下，此构建系统不再尝试在构建时签名文件。如果您想在构建时对文件进行签名，请使用--sign选项。"sign"目录包含几个PowerShell脚本，可帮助生成已发布签名的tap-windows6软件包：
 
-- *Cross-Sign*: cross-sign tap-windows6 driver files and tapinstall.exe
-- *Create-DriverSubmission*: create architecture-specific attestation signing submission cabinet files
-- *Extract-DriverSubmission*: extract attestation-signed zip files
-- *Sign-File*: sign files (e.g. tap-windows6 installer or driver submission cabinet files)
-- *Sign-tap6.conf.ps1*: configuration file for all the scripts above
-- *Prepare-Msm.ps1*: take Win7- and Win10-signed "dist" directories and produce a "dist" directory that MSM packaging can consume
+- *Cross-Sign*：交叉签名tap-windows6驱动程序文件和tapinstall.exe
+- *Create-DriverSubmission*：创建特定架构的证明签名提交文件
+- *Extract-DriverSubmission*：提取证明签名的zip文件
+- *Sign-File*：签名文件（例如tap-windows6安装程序或驱动程序提交文件）
+- *Sign-tap6.conf.ps1*：上述所有脚本的配置文件
+- *Prepare-Msm.ps1*：使用Win7和Win10签名的“dist”目录生成MSM打包可以使用的“dist”目录
 
-Most of these scripts operate directly on the "dist" directory that
-tap-windows6 build system produces. Below it is assumed that building and
-signing is done on the same computer.
+这些脚本中的大多数直接在tap-windows6构建系统生成的“dist”目录上操作。以下假定构建和签名是在同一台计算机上进行的。
 
-First produce cross-signed drivers for (Windows 7/8/8.1/Server 2012r2)::
+首先为（Windows 7/8/8.1/Server 2012r2）生成交叉签名的驱动程序：
 
   $ python.exe buildtap.py -c -b --ti=devcon
   $ sign\Cross-Sign.ps1 -SourceDir dist -Force
 
-Note that the "-Force" option for Cross-Sign.ps1 is *required* except in the
-unlikely case that you're appending a signature.
+请注意，Cross-Sign.ps1的"-Force"选项是*必需的*，除非您要附加签名。
 
-Next produce a driver submission cabinet files for attestation signing::
+接下来，为证明签名创建驱动程序提交文件：
 
   $ sign\Create-DriverSubmission.ps1
   $ Get-ChildItem -Path disk1|sign\Sign-File.ps1
 
-Three architecture-specific (i386, amd64, arm64) cabinet files are created.
-Submit these to Windows Dev Center for attestation signing. Note that unsigned
-cabinet files will be automatically rejected.
+将创建三个特定架构（i386、amd64、arm64）的提交文件。将这些提交文件提交给Windows Dev Center进行证明签名。请注意，未签名的提交文件将自动被拒绝。
 
-When submitting the drivers to Microsoft take care to only request signatures
-applicable for each architecture.
+在将驱动程序提交给Microsoft时，请务必仅请求适用于每个架构的签名。
 
-At this point move the cross-signed "dist" directory away::
+此时将交叉签名的“dist”目录移开：
 
   $ Move-Item dist dist.win7
 
-Download the attestation-signed drivers as zip files put them into a temporary
-directory (e.g. tap-windows6\tempdir). Then run Extract-DriverSubmission.ps1::
+下载证明签名的驱动程序作为zip文件，并将其放入临时目录中（例如tap-windows6\tempdir）。然后运行Extract-DriverSubmission.ps1：
 
   $ Get-ChildItem -Path tempdir -Filter "*.zip"|sign\Extract-DriverSubmission.ps1
 
-This extracts the drivers into the "dist" directory. Move that directory to dist.win10::
+这将把驱动程序提取到“dist”目录中。将该目录移动到dist.win10：
 
   $ Move-Item dist dist.win10
 
-After this you can start creating the installers and/or MSM packages.
+完成后，您可以开始创建安装程序和/或MSM软件包。
 
-If you're creating NSIS packages do::
+如果要创建NSIS软件包，请执行以下操作：
 
   $ Move-Item dist.win7 dist
   $ python.exe buildtap.py -p --ti=devcon
   $ Move-Item dist dist.win7
 
-Followed by::
+然后执行以下操作：
 
   $ Move-Item dist.win10 dist
   $ python.exe buildtap.py -p --ti=devcon
   $ Move-Item dist dist.win10
 
-Finally sign both installers::
+最后对两个安装程序进行签名：
 
   $ Get-Item tap-windows*.exe|sign\Sign-File.ps1
 
-On the other hand if you're creating MSM packages do::
+另一方面，如果要创建MSM软件包，请执行以下操作：
 
   $ sign\Prepare-Msm.ps1
   $ python buildtap.py -m --sdk=wdk
   $ Get-Item tap-windows*.msm|sign\Sign-File.ps1
 
-For additional instructions and background information please refer to
-`this article <https://community.openvpn.net/openvpn/wiki/BuildingTapWindows6>`_ on OpenVPN community wiki.
+有关更多说明和背景信息，请参阅OpenVPN社区维基上的`此文章 <https://community.openvpn.net/openvpn/wiki/BuildingTapWindows6>`_。
 
-Overriding setting defined in version.m4
+覆盖version.m4中定义的设置
 ----------------------------------------
 
-It is possible to override one or more of the settings in version.m4 file with
-the --versionoverride <file> option. Any settings given in the override file
-have precedence over those in version.m4.
+可以使用--versionoverride <file>选项覆盖version.m4文件中的一个或多个设置。覆盖文件中给出的任何设置优先于version.m4中的设置。
 
-This is useful when building several tap-windows6 drivers with different
-component ids for example.
+这在构建多个具有不同组件ID的tap-windows6驱动程序时非常有用，例如。
 
-Notes on proxies
+关于代理的注意事项
 ----------------
 
-It is possible to build tap-windows6 without connectivity to the Internet but
-any attempt to timestamp the driver will fail. For this reason configure your
-outbound proxy server before starting the build. Note that the command prompt
-also needs to be restarted to make use of new proxy settings.
+可以在没有与Internet连接的情况下构建tap-windows6，但任何尝试为驱动程序加上时间戳的操作都将失败。因此，在开始构建之前，请配置出站代理服务器。请注意，命令提示符还需要重新启动以使用新的代理设置。
 
-MSM packaging
+MSM打包
 -------------
 
-In order to build the MSM packages build and sign the driver first:
+为了构建MSM软件包，请先构建并签名驱动程序：
 
-- Build the TAP driver with buildtap.py and "-b" flag.
-- EV-sign the drivers
-- WHQL/Attestation-sign the drivers
+- 使用buildtap.py和“-b”标志构建TAP驱动程序。
+- 对驱动程序进行EV签名
+- 对驱动程序进行WHQL/Attestation签名
 
-Place the signed drivers in a directory structure under tap-windows6
-directory. Each platform directory should contain the EV-signed driver with a
-"win10" subdirectory containing WHQL/Attestation signed driver for that
-platform::
+将已签名的驱动程序放置在tap-windows6目录下的目录结构中。每个平台目录应包含带有“win10”子目录的EV签名驱动程序，该子目录包含该平台的WHQL/Attestation签名驱动程序：
 
   dist
   ├── amd64
@@ -312,7 +265,7 @@ platform::
   │   │   ├── OemVista.inf
   │   │   ├── tap0901.cat
   │   │   └── tap0901.sys
-  │   └── (Note: EV-signed driver for arm64 is not used.)
+  │   └── （注意：arm64的EV签名驱动程序未使用。）
   ├── include
   │   └── tap-windows.h
   └── i386
@@ -324,23 +277,17 @@ platform::
       ├── tap0901.cat
       └── tap0901.sys
 
-Building MSM packages requires Visual Studio 2019 (EWDK is not sufficient) and
-the WiX Toolset installed. In a Developer Command Prompt for Visual Studio
-2019, run::
+构建MSM软件包需要安装Visual Studio 2019（EWDK不足够）和WiX Toolset。在Visual Studio 2019的开发人员命令提示符中，运行：
 
   $ python buildtap.py -m --sdk=wdk
 
-This will compile the installer.dll file with embedded drivers and package it
-as a platform-dependent tap-windows-<version>-<platform>.msm files.
+这将使用嵌入驱动程序的installer.dll文件进行编译，并将其打包为特定于平台的tap-windows-<version>-<platform>.msm文件。
 
-As the WiX Toolset does not support the arm64 platform yet, only amd64 and
-i386 MSM files are built.
+由于WiX Toolset尚不支持arm64平台，因此只构建了amd64和i386的MSM文件。
 
-Optional: Consider EV-signing the MSM packages before deploying them. Thou,
-MSM signature is ignored when merging MSM into MSI package, users get a choice
-to validate the integrity of the downloaded MSM packages manually.
+可选：在部署之前考虑对MSM软件包进行EV签名。但是，当将MSM合并到MSI软件包中时，MSM签名将被忽略，用户可以选择手动验证下载的MSM软件包的完整性。
 
-License
+许可证
 -------
 
-See the file `COPYING <COPYING>`_.
+请参阅文件`COPYING <COPYING>`_。
